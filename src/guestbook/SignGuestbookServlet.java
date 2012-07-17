@@ -1,11 +1,16 @@
 package guestbook;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.logging.Logger;
 import javax.servlet.http.*;
+import javax.jdo.PersistenceManager;
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
+
+import guestbook.Greeting;
+import guestbook.PMF;
 
 @SuppressWarnings("serial")
 public class SignGuestbookServlet extends HttpServlet {
@@ -16,13 +21,14 @@ public class SignGuestbookServlet extends HttpServlet {
 		User user = userService.getCurrentUser();
 		
 		String content = req.getParameter("content");
-		if (content != null) {
-			content = "(No greeting)";
-		}
-		if (user != null) {
-			log.info("Greeting posted by user " + user.getNickname() + ": " + content);
-		} else {
-			log.info("Greeting posted anonymously: " + content);
+		Date date = new Date();
+		Greeting greeting = new Greeting(user, content, date);
+		
+		PersistenceManager pm = PMF.get().getPersistenceManager();
+		try {
+			pm.makePersistent(greeting);
+		} finally {
+			pm.close();
 		}
 		resp.sendRedirect("/guestbook.jsp");
 	}
